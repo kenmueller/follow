@@ -1,0 +1,23 @@
+$rows: 15;
+$columns: 25;
+$gap: 8px;
+$dimension: calc(min(
+	#{100 / $rows}vh - #{($rows + 1) * $gap / $rows},
+	#{100 / $columns}vw - #{($columns + 1) * $gap / $columns}
+));
+
+.root {
+	display: flex;
+	height: 100vh;
+}
+
+.grid {
+	display: grid;
+	grid: repeat($rows, $dimension) / repeat($columns, $dimension);
+	gap: $gap;
+	margin: auto;
+}
+
+.cell {
+	background: white;
+}

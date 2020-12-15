@@ -1,8 +1,31 @@
+@use '~react-toastify/dist/ReactToastify';
+
 *,
 ::before,
 ::after {
 	box-sizing: border-box;
 	margin: 0;
 	padding: 0;
+	font-family: Roboto Mono, Arial, Helvetica, sans-serif;
 	border: none;
+	outline: none;
+}
+
+body {
+	overscroll-behavior: none;
+	background: #292d3e;
+}
+
+button {
+	cursor: pointer;
+	
+	&:disabled {
+		cursor: default;
+	}
+}
+
+.Toastify__toast {
+	font-weight: bold;
+	padding-left: 16px;
+	border-radius: 5px;
 }
