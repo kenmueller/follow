@@ -1,8 +1,8 @@
-import Coordinates from './Coordinates'
+import Coordinate from './Coordinate'
 
 export default interface User {
 	id: string
 	color: string
 	score: number
-	location: Coordinates
+	location: Coordinate
 }

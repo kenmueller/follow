@@ -7,6 +7,7 @@ import { toast } from 'react-toastify'
 
 import { GAME_COLUMNS, GAME_ROWS } from 'models/Game'
 import User from 'models/User'
+import InitialData from 'models/InitialData'
 import getId from 'lib/getId'
 
 import styles from 'styles/GamePage.module.scss'
@@ -32,7 +33,13 @@ const GamePage: NextPage = () => {
 			router.push('/')
 			toast.error('Game not found')
 		})
-	}, [router, gameId])
+		
+		io.on('data', ({ game, self }: InitialData) => {
+			console.log(game, self)
+		})
+		
+		io.on('users', setUsers)
+	}, [router, gameId, setUsers])
 	
 	return (
 		<div className={styles.root}>
