@@ -4,4 +4,5 @@ export const GAME_COLUMNS = 25
 export default interface Game {
 	id: string
 	leader: string
+	started: boolean
 }

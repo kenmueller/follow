@@ -1,6 +1,6 @@
 $rows: 15;
 $columns: 25;
-$gap: 8px;
+$gap: 1px;
 $dimension: calc(min(
 	#{100 / $rows}vh - #{($rows + 1) * $gap / $rows},
 	#{100 / $columns}vw - #{($columns + 1) * $gap / $columns}
@@ -8,6 +8,7 @@ $dimension: calc(min(
 
 .root {
 	display: flex;
+	position: relative;
 	height: 100vh;
 }
 
@@ -20,4 +21,55 @@ $dimension: calc(min(
 
 .cell {
 	background: #89ddff;
+}
+
+.header {
+	display: flex;
+	position: absolute;
+	justify-content: space-between;
+	align-items: center;
+	top: 0;
+	left: 0;
+	right: 0;
+	padding: 12px 16px;
+	z-index: 1;
+}
+
+.users {
+	font-size: 18px;
+	font-weight: bold;
+	color: white;
+	text-shadow: 0 0 5px black;
+}
+
+.status {
+	font-size: 18px;
+	font-weight: bold;
+	color: white;
+	text-shadow: 0 0 5px black;
+}
+
+.start {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	padding: 16px 24px;
+	line-height: 1.15;
+	font-size: 20px;
+	font-weight: bold;
+	color: white;
+	background: #ec407a;
+	border-radius: 8px;
+	box-shadow: 0 0 0 100vmax transparentize(black, 0.5);
+	transform: translate(-50%, -50%);
+	transition: color 0.3s, background 0.3s, transform 0.3s;
+	
+	&:hover {
+		color: #ec407a;
+		background: white;
+	}
+	
+	&:active {
+		transform: translate(-50%, calc(-50% - 2px));
+	}
 }
