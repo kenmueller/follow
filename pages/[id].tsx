@@ -5,12 +5,13 @@ import Head from 'next/head'
 import { io as IO } from 'socket.io-client'
 import { toast } from 'react-toastify'
 
-import { GAME_COLUMNS, GAME_ROWS } from 'models/Game'
+import Game, { GAME_ROWS, GAME_COLUMNS } from 'models/Game'
 import User from 'models/User'
 import InitialData from 'models/InitialData'
 import getId from 'lib/getId'
 
 import styles from 'styles/GamePage.module.scss'
+import getUserOnLocation from 'lib/getUserOnLocation'
 
 const ROWS = Array.from(new Array(GAME_ROWS))
 const COLUMNS = Array.from(new Array(GAME_COLUMNS))
@@ -19,12 +20,15 @@ const GamePage: NextPage = () => {
 	const router = useRouter()
 	const gameId = router.query.id as string | undefined
 	
+	const [game, setGame] = useState<Game | null>(null)
+	const [self, setSelf] = useState<User | null | undefined>()
+	
 	const [users, setUsers] = useState<User[] | null>(null)
 	
 	useEffect(() => {
 		if (!gameId)
 			return
-		
+		console.log(gameId)
 		const io = IO(process.env.NEXT_PUBLIC_API_BASE_URL, {
 			query: { id: getId(), game: gameId }
 		})
@@ -35,11 +39,14 @@ const GamePage: NextPage = () => {
 		})
 		
 		io.on('data', ({ game, self }: InitialData) => {
-			console.log(game, self)
+			setGame(game)
+			setSelf(self)
 		})
 		
 		io.on('users', setUsers)
-	}, [router, gameId, setUsers])
+		
+		return () => io.disconnect()
+	}, [router, gameId, setGame, setSelf, setUsers])
 	
 	return (
 		<div className={styles.root}>
@@ -50,7 +57,11 @@ const GamePage: NextPage = () => {
 				{ROWS.map((_row, row) => (
 					<Fragment key={row}>
 						{COLUMNS.map((_column, column) => (
-							<div key={column} className={styles.cell} />
+							<div
+								key={column}
+								className={styles.cell}
+								style={{ background: users && getUserOnLocation(users, { x: column, y: row })?.color }}
+							/>
 						))}
 					</Fragment>
 				))}
