@@ -28,7 +28,7 @@ const GamePage: NextPage = () => {
 	useEffect(() => {
 		if (!gameId)
 			return
-		console.log(gameId)
+		
 		const io = IO(process.env.NEXT_PUBLIC_API_BASE_URL, {
 			query: { id: getId(), game: gameId }
 		})
