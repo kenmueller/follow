@@ -8,6 +8,7 @@ import 'styles/global.scss'
 const App: NextPage<AppProps> = ({ Component, pageProps }) => (
 	<>
 		<Head>
+			<link key="api-preconnect" rel="preconnect" href={process.env.NEXT_PUBLIC_API_BASE_URL} />
 			<link key="fonts-googleapis-preconnect" rel="preconnect" href="https://fonts.googleapis.com" />
 			<link key="fonts-gstatic-preconnect" rel="preconnect" href="https://fonts.gstatic.com" />
 			<link

@@ -1,40 +1,66 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { NextPage } from 'next'
 import Router from 'next/router'
 import Head from 'next/head'
+import Link from 'next/link'
 import { toast } from 'react-toastify'
+import { io } from 'socket.io-client'
 
+import Game from 'models/Game'
 import _createGame from 'lib/createGame'
 
 import styles from 'styles/Home.module.scss'
+import GameState from 'models/Game/State'
 
 const Home: NextPage = () => {
-	const [isLoading, setIsLoading] = useState(false)
+	const [games, setGames] = useState<Game[] | null>(null)
+	const [isCreateGameLoading, setIsCreateGameLoading] = useState(false)
 	
 	const createGame = useCallback(async () => {
 		try {
-			setIsLoading(true)
+			setIsCreateGameLoading(true)
 			Router.push(`/${await _createGame()}`)
 		} catch ({ message }) {
-			setIsLoading(false)
+			setIsCreateGameLoading(false)
 			toast.error(message)
 		}
-	}, [setIsLoading])
+	}, [setIsCreateGameLoading])
+	
+	useEffect(() => {
+		const socket = io(`${process.env.NEXT_PUBLIC_API_BASE_URL}/games`)
+		
+		socket.on('games', setGames)
+		
+		return () => socket.disconnect()
+	}, [setGames])
 	
 	return (
 		<div className={styles.root}>
 			<Head>
 				<title key="title">follow</title>
 			</Head>
-			<div className={styles.content}>
-				<h1 className={styles.title}>follow</h1>
+			<nav className={styles.navbar}>
+				<h1 className={styles.name}>follow</h1>
 				<button
 					className={styles.createGame}
-					disabled={isLoading}
+					disabled={isCreateGameLoading}
 					onClick={createGame}
 				>
-					{isLoading ? 'creating...' : 'create game'}
+					{isCreateGameLoading ? 'creating...' : 'create game'}
 				</button>
+			</nav>
+			<h2 className={styles.title}>join game</h2>
+			<div className={styles.games}>
+				{games?.map(game => (
+					<Link key={game.id} href={`/${game.id}`}>
+						<a className={styles.game}>
+							<b>{game.state === GameState.Waiting
+								? 'join'
+								: 'spectate'
+							}</b> {game.id}
+						</a>
+					</Link>
+				))}
 			</div>
 		</div>
 	)

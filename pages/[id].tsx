@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, Fragment, useRef } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
-import { io as IO, Socket } from 'socket.io-client'
+import { io, Socket } from 'socket.io-client'
 import { toast } from 'react-toastify'
 
 import Game, { GAME_ROWS, GAME_COLUMNS } from 'models/Game'
@@ -19,7 +19,7 @@ const ROWS = Array.from(new Array(GAME_ROWS))
 const COLUMNS = Array.from(new Array(GAME_COLUMNS))
 
 const GamePage: NextPage = () => {
-	const io = useRef<Socket | null>(null)
+	const socket = useRef<Socket | null>(null)
 	
 	const router = useRouter()
 	const gameId = router.query.id as string | undefined
@@ -35,51 +35,51 @@ const GamePage: NextPage = () => {
 	const isMovementReady = didJoin && game?.state === GameState.Started
 	
 	const start = useCallback(() => {
-		if (!io.current)
+		if (!socket.current)
 			return
 		
-		io.current.emit('start')
+		socket.current.emit('start')
 		setGame(game => ({ ...game, state: GameState.Starting }))
-	}, [io, setGame])
+	}, [socket, setGame])
 	
 	useEffect(() => {
 		if (!gameId)
 			return
 		
-		io.current = IO(process.env.NEXT_PUBLIC_API_BASE_URL, {
+		socket.current = io(`${process.env.NEXT_PUBLIC_API_BASE_URL}/game`, {
 			query: { id: getId(), game: gameId }
 		})
 		
-		io.current.on('not-found', () => {
+		socket.current.on('not-found', () => {
 			router.push('/')
 			toast.error('Game not found')
 		})
 		
-		io.current.on('data', ({ game, self }: InitialData) => {
+		socket.current.on('data', ({ game, self }: InitialData) => {
 			setGame(game)
 			setSelf(self)
 		})
 		
-		io.current.on('join', (user: User) => {
+		socket.current.on('join', (user: User) => {
 			toast.info(`${user.color} joined`, {
 				style: { background: user.color }
 			})
 		})
 		
-		io.current.on('leave', (user: User) => {
+		socket.current.on('leave', (user: User) => {
 			toast.info(`${user.color} left`, {
 				style: { background: user.color }
 			})
 		})
 		
-		io.current.on('start', () => {
+		socket.current.on('start', () => {
 			setGame(game => game && ({ ...game, state: GameState.Starting }))
 		})
 		
-		io.current.on('users', setUsers)
+		socket.current.on('users', setUsers)
 		
-		return () => io.current?.disconnect()
-	}, [io, router, gameId, setGame, setSelf, setUsers])
+		return () => socket.current?.disconnect()
+	}, [socket, router, gameId, setGame, setSelf, setUsers])
 	
 	useEffect(() => {
 		if (!isMovementReady)
@@ -87,9 +87,9 @@ const GamePage: NextPage = () => {
 		
 		return onMovement(location => {
 			setSelf(self => self && ({ ...self, location }))
-			io.current?.emit('location', location)
+			socket.current?.emit('location', location)
 		})
-	}, [io, isMovementReady])
+	}, [socket, isMovementReady])
 	
 	useEffect(() => {
 		setAllUsers(users && (self
@@ -101,7 +101,6 @@ const GamePage: NextPage = () => {
 	return (
 		<div className={styles.root}>
 			<Head>
-				<link key="api-preconnect" rel="preconnect" href={process.env.NEXT_PUBLIC_API_BASE_URL} />
 				<title key="title">
 					{self === undefined ? '' : `${self?.color ?? 'spectating'} - `}follow
 				</title>

@@ -1,22 +1,38 @@
+$navbar-content-height: 63px;
+$navbar-bottom-border-width: 1px;
+
+$horizontal-padding: 16px;
+$vertical-padding: 12px;
+
 .root {
+	padding:
+		($navbar-content-height + $navbar-bottom-border-width + $vertical-padding)
+		$horizontal-padding
+		$vertical-padding;
+}
+
+.navbar {
 	display: flex;
-	height: 100vh;
+	position: fixed;
+	justify-content: space-between;
+	align-items: center;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: $navbar-content-height;
+	padding: $vertical-padding $horizontal-padding;
+	border-bottom: $navbar-bottom-border-width solid #333;
 }
 
-.content {
-	margin: auto;
-}
-
-.title {
-	text-align: center;
+.name {
 	color: white;
 }
 
 .createGame {
-	margin: 20px auto 0;
-	padding: 16px 24px;
+	align-self: stretch;
+	padding: 0 12px;
 	line-height: 1.15;
-	font-size: 20px;
+	font-size: 18px;
 	font-weight: bold;
 	color: white;
 	background: #ec407a;
@@ -26,6 +42,36 @@
 	&:hover {
 		color: #ec407a;
 		background: white;
+	}
+	
+	&:active {
+		transform: translateY(-2px);
+	}
+}
+
+.title {
+	color: white;
+}
+
+.games {
+	margin-top: $horizontal-padding;
+}
+
+.game {
+	display: block;
+	padding: $vertical-padding $horizontal-padding;
+	text-decoration: none;
+	color: white;
+	background: transparentize(white, 0.9);
+	border-radius: 8px;
+	transition: background 0.3s, transform 0.3s;
+	
+	& + & {
+		margin-top: $vertical-padding;
+	}
+	
+	&:hover {
+		background: transparentize(white, 0.8);
 	}
 	
 	&:active {
