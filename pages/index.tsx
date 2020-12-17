@@ -33,7 +33,7 @@ const Home: NextPage = () => {
 					disabled={isLoading}
 					onClick={createGame}
 				>
-					create game
+					{isLoading ? 'creating...' : 'create game'}
 				</button>
 			</div>
 		</div>

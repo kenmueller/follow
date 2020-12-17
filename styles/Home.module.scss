@@ -13,6 +13,22 @@
 }
 
 .createGame {
-	display: block;
-	margin: 12px auto 0;
+	margin: 20px auto 0;
+	padding: 16px 24px;
+	line-height: 1.15;
+	font-size: 20px;
+	font-weight: bold;
+	color: white;
+	background: #ec407a;
+	border-radius: 8px;
+	transition: color 0.3s, background 0.3s, transform 0.3s;
+	
+	&:hover {
+		color: #ec407a;
+		background: white;
+	}
+	
+	&:active {
+		transform: translateY(-2px);
+	}
 }
