@@ -76,7 +76,9 @@ $dimension: calc(min(
 	color: white;
 	background: #ec407a;
 	border-radius: 8px;
-	box-shadow: 0 0 0 100vmax transparentize(black, 0.5);
+	box-shadow:
+		0 0 0 100vmax transparentize(black, 0.5),
+		0 0 20px 5px transparentize(black, 0.9);
 	transform: translate(-50%, -50%);
 	transition: color 0.3s, background 0.3s, transform 0.3s;
 	
