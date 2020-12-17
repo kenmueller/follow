@@ -1,14 +1,15 @@
-import { useState, useCallback, useEffect, Fragment, useRef } from 'react'
+import { useRef, useState, useMemo, useCallback, useEffect, Fragment } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import { io, Socket } from 'socket.io-client'
 import { toast } from 'react-toastify'
 
-import Game, { GAME_ROWS, GAME_COLUMNS } from 'models/Game'
+import Game, { LUCKY_CELL_TIME, GAME_ROWS, GAME_COLUMNS } from 'models/Game'
 import GameState from 'models/Game/State'
 import User from 'models/User'
 import InitialData from 'models/InitialData'
+import Coordinate from 'models/Coordinate'
 import getId from 'lib/getId'
 import onMovement from 'lib/onMovement'
 import getUserOnLocation from 'lib/getUserOnLocation'
@@ -30,17 +31,33 @@ const GamePage: NextPage = () => {
 	const [users, setUsers] = useState<User[] | null>(null)
 	const [allUsers, setAllUsers] = useState(users)
 	
+	const [luckyCells, setLuckyCells] = useState<Coordinate[] | null>(null)
+	const [luckyCellTime, setLuckyCellTime] = useState<number | null>(null)
+	
 	const didJoin = Boolean(self)
 	const isLeader = didJoin && game?.leader === self.id
 	const isMovementReady = didJoin && game?.state === GameState.Started
 	
-	const start = useCallback(() => {
-		if (!socket.current)
-			return
+	const status = useMemo(() => {
+		if (!game)
+			return null
 		
-		socket.current.emit('start')
-		setGame(game => ({ ...game, state: GameState.Starting }))
-	}, [socket, setGame])
+		if (!self)
+			return 'spectating'
+		
+		switch (game.state) {
+			case GameState.Waiting:
+				return isLeader ? null : 'waiting for leader'
+			case GameState.Starting:
+				return `${luckyCellTime ?? 0}s`
+			case GameState.Started:
+				return null
+		}
+	}, [game, self, isLeader, luckyCellTime])
+	
+	const start = useCallback(() => {
+		socket.current?.emit('start')
+	}, [socket])
 	
 	useEffect(() => {
 		if (!gameId)
@@ -73,8 +90,13 @@ const GamePage: NextPage = () => {
 			})
 		})
 		
-		socket.current.on('start', () => {
+		socket.current.on('starting', (luckyCells: Coordinate[]) => {
 			setGame(game => game && ({ ...game, state: GameState.Starting }))
+			setLuckyCells(luckyCells)
+		})
+		
+		socket.current.on('started', () => {
+			setGame(game => game && ({ ...game, state: GameState.Started }))
 		})
 		
 		socket.current.on('users', setUsers)
@@ -98,6 +120,27 @@ const GamePage: NextPage = () => {
 			: users
 		))
 	}, [self, users, setAllUsers])
+	
+	useEffect(() => {
+		if (!luckyCells)
+			return
+		
+		setLuckyCellTime(luckyCells.length * Math.floor(LUCKY_CELL_TIME / 1000))
+		
+		const interval = setInterval(() => {
+			setLuckyCellTime(time => {
+				const newTime = time - 1
+				
+				if (newTime > 0)
+					return newTime
+				
+				clearInterval(interval)
+				return null
+			})
+		}, LUCKY_CELL_TIME)
+		
+		return () => clearInterval(interval)
+	}, [luckyCells, setLuckyCellTime])
 	
 	return (
 		<div className={styles.root}>
@@ -124,14 +167,7 @@ const GamePage: NextPage = () => {
 				))}
 			</div>
 			<header className={styles.header}>
-				<p className={styles.status}>
-					{game
-						? self
-							? !isLeader && game.state === GameState.Waiting && 'waiting for leader'
-							: 'spectating'
-						: null
-					}
-				</p>
+				<p className={styles.status}>{status}</p>
 				<div>
 					{allUsers?.map((user, index) => (
 						<div key={user.id} className={styles.user}>
