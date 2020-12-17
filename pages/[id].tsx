@@ -6,6 +6,7 @@ import { io as IO, Socket } from 'socket.io-client'
 import { toast } from 'react-toastify'
 
 import Game, { GAME_ROWS, GAME_COLUMNS } from 'models/Game'
+import GameState from 'models/Game/State'
 import User from 'models/User'
 import InitialData from 'models/InitialData'
 import getId from 'lib/getId'
@@ -29,16 +30,16 @@ const GamePage: NextPage = () => {
 	const [users, setUsers] = useState<User[] | null>(null)
 	const [allUsers, setAllUsers] = useState(users)
 	
-	const isLeader = game && game.leader === self?.id
-	const didStart = game?.started ?? false
 	const didJoin = Boolean(self)
+	const isLeader = didJoin && game?.leader === self.id
+	const isMovementReady = didJoin && game?.state === GameState.Started
 	
 	const start = useCallback(() => {
 		if (!io.current)
 			return
 		
 		io.current.emit('start')
-		setGame(game => ({ ...game, started: true }))
+		setGame(game => ({ ...game, state: GameState.Starting }))
 	}, [io, setGame])
 	
 	useEffect(() => {
@@ -72,7 +73,7 @@ const GamePage: NextPage = () => {
 		})
 		
 		io.current.on('start', () => {
-			setGame(game => game && ({ ...game, started: true }))
+			setGame(game => game && ({ ...game, state: GameState.Starting }))
 		})
 		
 		io.current.on('users', setUsers)
@@ -81,14 +82,14 @@ const GamePage: NextPage = () => {
 	}, [io, router, gameId, setGame, setSelf, setUsers])
 	
 	useEffect(() => {
-		if (!(didJoin && didStart))
+		if (!isMovementReady)
 			return
 		
 		return onMovement(location => {
 			setSelf(self => self && ({ ...self, location }))
 			io.current?.emit('location', location)
 		})
-	}, [io, didStart, didJoin])
+	}, [io, isMovementReady])
 	
 	useEffect(() => {
 		setAllUsers(users && (self
@@ -123,14 +124,14 @@ const GamePage: NextPage = () => {
 				<p className={styles.status}>
 					{game
 						? self
-							? !(isLeader || didStart) && 'waiting for leader'
+							? !isLeader && game.state === GameState.Waiting && 'waiting for leader'
 							: 'spectating'
 						: null
 					}
 				</p>
 				<div>
 					{allUsers?.map((user, index) => (
-						<div className={styles.user}>
+						<div key={user.id} className={styles.user}>
 							<p className={styles.userRank} style={{ background: user.color }}>{index + 1}</p>
 							<p className={styles.userName}>{user.color}</p>
 							<p className={styles.userScore}>{user.score}</p>
@@ -138,7 +139,7 @@ const GamePage: NextPage = () => {
 					))}
 				</div>
 			</header>
-			{isLeader && !didStart && (
+			{isLeader && game?.state === GameState.Waiting && (
 				<button className={styles.start} onClick={start}>start</button>
 			)}
 		</div>
