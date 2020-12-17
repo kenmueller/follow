@@ -92,7 +92,7 @@ const GamePage: NextPage = () => {
 	
 	useEffect(() => {
 		setAllUsers(users && (self
-			? [...users, self].sort((a, b) => b.score - a.score)
+			? [self, ...users].sort((a, b) => b.score - a.score)
 			: users
 		))
 	}, [self, users, setAllUsers])
