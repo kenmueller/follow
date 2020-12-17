@@ -102,6 +102,9 @@ const GamePage: NextPage = () => {
 		<div className={styles.root}>
 			<Head>
 				<link key="api-preconnect" rel="preconnect" href={process.env.NEXT_PUBLIC_API_BASE_URL} />
+				<title key="title">
+					{self === undefined ? '' : `${self?.color ?? 'spectating'} - `}follow
+				</title>
 			</Head>
 			<div className={styles.grid}>
 				{ROWS.map((_row, row) => (
