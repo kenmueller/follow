@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 import { io, Socket } from 'socket.io-client'
 import { toast } from 'react-toastify'
+import cx from 'classnames'
 
 import Game, { LUCKY_CELL_TIME, GAME_ROWS, GAME_COLUMNS } from 'models/Game'
 import GameState from 'models/Game/State'
@@ -12,7 +13,7 @@ import InitialData from 'models/InitialData'
 import Coordinate from 'models/Coordinate'
 import getId from 'lib/getId'
 import onMovement from 'lib/onMovement'
-import getUserOnLocation from 'lib/getUserOnLocation'
+import getCellBackground from 'lib/getCellBackground'
 
 import styles from 'styles/GamePage.module.scss'
 
@@ -32,28 +33,29 @@ const GamePage: NextPage = () => {
 	const [allUsers, setAllUsers] = useState(users)
 	
 	const [luckyCells, setLuckyCells] = useState<Coordinate[] | null>(null)
-	const [luckyCellTime, setLuckyCellTime] = useState<number | null>(null)
+	const [luckyCellIndex, setLuckyCellIndex] = useState<number | null>(null)
 	
 	const didJoin = Boolean(self)
+	const state = game && game.state
 	const isLeader = didJoin && game?.leader === self.id
-	const isMovementReady = didJoin && game?.state === GameState.Started
+	const isMovementReady = didJoin && state === GameState.Started
+	
+	const luckyCellCount = luckyCells && luckyCells.length
 	
 	const status = useMemo(() => {
-		if (!game)
-			return null
-		
-		if (!self)
-			return 'spectating'
-		
-		switch (game.state) {
+		switch (state) {
+			case null:
+				return null
 			case GameState.Waiting:
 				return isLeader ? null : 'waiting for leader'
 			case GameState.Starting:
-				return `${luckyCellTime ?? 0}s`
+				return luckyCellCount === null || luckyCellIndex === null
+					? null
+					: `${(luckyCellCount - luckyCellIndex) * LUCKY_CELL_TIME / 1000}s`
 			case GameState.Started:
-				return null
+				return didJoin ? 'go!' : 'spectating'
 		}
-	}, [game, self, isLeader, luckyCellTime])
+	}, [state, didJoin, isLeader, luckyCellCount, luckyCellIndex])
 	
 	const start = useCallback(() => {
 		socket.current?.emit('start')
@@ -122,25 +124,29 @@ const GamePage: NextPage = () => {
 	}, [self, users, setAllUsers])
 	
 	useEffect(() => {
-		if (!luckyCells)
+		if (luckyCellCount === null)
 			return
 		
-		setLuckyCellTime(luckyCells.length * Math.floor(LUCKY_CELL_TIME / 1000))
+		setLuckyCellIndex(0)
 		
 		const interval = setInterval(() => {
-			setLuckyCellTime(time => {
-				const newTime = time - 1
+			setLuckyCellIndex(index => {
+				if (index === null)
+					return null
 				
-				if (newTime > 0)
-					return newTime
+				const newIndex = index + 1
 				
-				clearInterval(interval)
-				return null
+				if (newIndex >= luckyCellCount) {
+					clearInterval(interval)
+					return null
+				}
+				
+				return newIndex
 			})
 		}, LUCKY_CELL_TIME)
 		
 		return () => clearInterval(interval)
-	}, [luckyCells, setLuckyCellTime])
+	}, [luckyCellCount, setLuckyCellIndex])
 	
 	return (
 		<div className={styles.root}>
@@ -149,17 +155,21 @@ const GamePage: NextPage = () => {
 					{self === undefined ? '' : `${self?.color ?? 'spectating'} - `}follow
 				</title>
 			</Head>
-			<div className={styles.grid}>
+			<div className={cx(styles.grid, { [styles.starting]: state === GameState.Starting })}>
 				{ROWS.map((_row, row) => (
 					<Fragment key={row}>
 						{COLUMNS.map((_column, column) => (
 							<div
 								key={column}
-								className={styles.cell}
 								style={{
-									background: allUsers && (
-										getUserOnLocation(allUsers, { x: column, y: row })?.color
-									)
+									background: getCellBackground({
+										row,
+										column,
+										state,
+										luckyCells,
+										luckyCellIndex,
+										users: allUsers
+									})
 								}}
 							/>
 						))}
@@ -167,7 +177,7 @@ const GamePage: NextPage = () => {
 				))}
 			</div>
 			<header className={styles.header}>
-				<p className={styles.status}>{status}</p>
+				<p>{status}</p>
 				<div>
 					{allUsers?.map((user, index) => (
 						<div key={user.id} className={styles.user}>
@@ -178,7 +188,7 @@ const GamePage: NextPage = () => {
 					))}
 				</div>
 			</header>
-			{isLeader && game?.state === GameState.Waiting && (
+			{isLeader && state === GameState.Waiting && (
 				<button className={styles.start} onClick={start}>start</button>
 			)}
 		</div>

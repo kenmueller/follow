@@ -17,10 +17,14 @@ $dimension: calc(min(
 	grid: repeat($rows, $dimension) / repeat($columns, $dimension);
 	gap: $gap;
 	margin: auto;
+	
+	> div {
+		background: #89ddff;
+	}
 }
 
-.cell {
-	background: #89ddff;
+.starting > div {
+	transition: background 0.5s ease-out;
 }
 
 .header {
