@@ -27,6 +27,7 @@ const GamePage: NextPage = () => {
 	const [self, setSelf] = useState<User | null | undefined>()
 	
 	const [users, setUsers] = useState<User[] | null>(null)
+	const [allUsers, setAllUsers] = useState(users)
 	
 	const isLeader = game && game.leader === self?.id
 	const didStart = game?.started ?? false
@@ -89,6 +90,13 @@ const GamePage: NextPage = () => {
 		})
 	}, [io, didStart, didJoin])
 	
+	useEffect(() => {
+		setAllUsers(users && (self
+			? [...users, self].sort((a, b) => b.score - a.score)
+			: users
+		))
+	}, [self, users, setAllUsers])
+	
 	return (
 		<div className={styles.root}>
 			<Head>
@@ -101,31 +109,37 @@ const GamePage: NextPage = () => {
 							<div
 								key={column}
 								className={styles.cell}
-								style={{ background: users && getUserOnLocation(users, { x: column, y: row })?.color }}
+								style={{
+									background: allUsers && (
+										getUserOnLocation(allUsers, { x: column, y: row })?.color
+									)
+								}}
 							/>
 						))}
 					</Fragment>
 				))}
 			</div>
 			<header className={styles.header}>
-				<p className={styles.users}>
-					{users && <>{users.length + 1} player{users.length ? 's' : ''}</>}
-				</p>
 				<p className={styles.status}>
 					{game
 						? self
-							? isLeader
-								? 'leader'
-								: !didStart && 'waiting for leader'
+							? !(isLeader || didStart) && 'waiting for leader'
 							: 'spectating'
 						: null
 					}
 				</p>
+				<div>
+					{allUsers?.map((user, index) => (
+						<div className={styles.user}>
+							<p className={styles.userRank} style={{ background: user.color }}>{index + 1}</p>
+							<p className={styles.userName}>{user.color}</p>
+							<p className={styles.userScore}>{user.score}</p>
+						</div>
+					))}
+				</div>
 			</header>
 			{isLeader && !didStart && (
-				<button className={styles.start} onClick={start}>
-					start
-				</button>
+				<button className={styles.start} onClick={start}>start</button>
 			)}
 		</div>
 	)
