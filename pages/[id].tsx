@@ -47,7 +47,8 @@ const GamePage: NextPage = () => {
 			return
 		
 		socket.current = io(`${process.env.NEXT_PUBLIC_API_BASE_URL}/game`, {
-			query: { id: getId(), game: gameId }
+			query: { id: getId(), game: gameId },
+			forceNew: true
 		})
 		
 		socket.current.on('not-found', () => {
