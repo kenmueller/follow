@@ -9,6 +9,7 @@ import Game, { GAME_ROWS, GAME_COLUMNS } from 'models/Game'
 import User from 'models/User'
 import InitialData from 'models/InitialData'
 import getId from 'lib/getId'
+import onMovement from 'lib/onMovement'
 import getUserOnLocation from 'lib/getUserOnLocation'
 
 import styles from 'styles/GamePage.module.scss'
@@ -29,6 +30,7 @@ const GamePage: NextPage = () => {
 	
 	const isLeader = game && game.leader === self?.id
 	const didStart = game?.started ?? false
+	const didJoin = Boolean(self)
 	
 	const start = useCallback(() => {
 		if (!io.current)
@@ -69,13 +71,23 @@ const GamePage: NextPage = () => {
 		})
 		
 		io.current.on('start', () => {
-			setGame(game => ({ ...game, started: true }))
+			setGame(game => game && ({ ...game, started: true }))
 		})
 		
 		io.current.on('users', setUsers)
 		
 		return () => io.current?.disconnect()
 	}, [io, router, gameId, setGame, setSelf, setUsers])
+	
+	useEffect(() => {
+		if (!(didJoin && didStart))
+			return
+		
+		return onMovement(location => {
+			setSelf(self => self && ({ ...self, location }))
+			io.current?.emit('location', location)
+		})
+	}, [io, didStart, didJoin])
 	
 	return (
 		<div className={styles.root}>
