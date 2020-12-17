@@ -158,21 +158,10 @@ const GamePage: NextPage = () => {
 			<div className={cx(styles.grid, { [styles.starting]: state === GameState.Starting })}>
 				{ROWS.map((_row, row) => (
 					<Fragment key={row}>
-						{COLUMNS.map((_column, column) => (
-							<div
-								key={column}
-								style={{
-									background: getCellBackground({
-										row,
-										column,
-										state,
-										luckyCells,
-										luckyCellIndex,
-										users: allUsers
-									})
-								}}
-							/>
-						))}
+						{COLUMNS.map((_column, column) => {
+							const background = getCellBackground({ row, column, state, luckyCells, luckyCellIndex, users: allUsers })
+							return <div key={column} style={{ background }} />
+						})}
 					</Fragment>
 				))}
 			</div>
